@@ -305,7 +305,7 @@ Post processing
 
 Finally, if necessary, the completed kernel is converted from *ELF* to
 the format expected by the loader and/or flash tool required by the
-target. This is accomplished in a straightforward manner with *objdump*.
+target. This is accomplished in a straightforward manner with *objcopy*.
 
 .. figure:: build-build-phase-6.svg
     :align: center
