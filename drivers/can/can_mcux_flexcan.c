@@ -627,7 +627,7 @@ static void mcux_flexcan_fd_to_can_frame(const flexcan_fd_frame_t *src,
 	dest->timestamp = src->timestamp;
 #endif /* CAN_RX_TIMESTAMP */
 }
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+#endif /* CONFIG_CAN_MCUX_FLEXCAN_FDasdfasdfasdf */
 
 static void mcux_flexcan_can_filter_to_mbconfig(const struct can_filter *src,
 						flexcan_rx_mb_config_t *dest,
