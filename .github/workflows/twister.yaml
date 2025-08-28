@@ -61,7 +61,14 @@ jobs:
         if: github.event_name == 'pull_request'
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
-
+          
+      - name: Setup Zephyr project
+        if: github.event_name == 'pull_request'
+        uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
+        with:
+          app-path: zephyr
+          toolchains: all
+          
       - name: Environment Setup
         working-directory: zephyr
         if: github.event_name == 'pull_request'
