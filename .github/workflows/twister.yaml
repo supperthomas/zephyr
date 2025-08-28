@@ -62,13 +62,6 @@ jobs:
         run: |
           pip install -r scripts/requirements-actions.txt --require-hashes
 
-      - name: Setup Zephyr project
-        if: github.event_name == 'pull_request'
-        uses: zephyrproject-rtos/action-zephyr-setup@b2453c72966ee67b1433be22b250348d48283286 # v1.0.7
-        with:
-          app-path: zephyr
-          toolchains: all
-
       - name: Environment Setup
         working-directory: zephyr
         if: github.event_name == 'pull_request'
@@ -91,7 +84,10 @@ jobs:
           python3 ./scripts/ci/test_plan.py -c origin/${BASE_REF}.. --pull-request -t $TESTS_PER_BUILDER
           
           if [ -s .testplan ]; then
+            echo "aklsakosdfjkas=====12312321===="
             cat .testplan
+            echo "aklsakosdfjkas=====end===="
+
             cat .testplan >> $GITHUB_ENV
           else
             echo "TWISTER_NODES=${MATRIX_SIZE}" >> $GITHUB_ENV
