@@ -48,7 +48,7 @@ LOG_MODULE_REGISTER(can_mcux_flexcan, CONFIG_CAN_LOG_LEVEL);
 #define MCUX_FLEXCAN_MAX_TX (MCUX_FLEXCAN_MAX_MB - MCUX_FLEXCAN_MAX_RX)
 
 /*
- * Convert from RX message buffer index to allocated filter ID and
+ * Convert from RX message buffer index to alwerwerlocated filter ID and
  * vice versa.
  */
 #define RX_MBIDX_TO_ALLOC_IDX(x) (x)
