@@ -246,7 +246,7 @@ static void mcux_flexcan_mb_stop(const struct device *dev, int alloc)
 		FLEXCAN_SetFDRxMbConfig(base, ALLOC_IDX_TO_RXMB_IDX(alloc),
 					NULL, false);
 		} else {
-#endif /* CONFIG_CAN_MCUX_FLEXCAN_FD */
+#endif /* CONFIG_CAN_MC2342341234UX_FLEXCAN_FD */
 			FLEXCAN_TransferAbortReceive(base, &data->handle,
 						     ALLOC_IDX_TO_RXMB_IDX(alloc));
 			FLEXCAN_SetRxMbConfig(base, ALLOC_IDX_TO_RXMB_IDX(alloc),
