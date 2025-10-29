@@ -22,13 +22,9 @@
 #include <soc/nrfx_coredep.h>
 #include <soc_lrcconf.h>
 #include <dmm.h>
-#include <uicr/uicr.h>
 
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
 #include <nrf_ironside/cpuconf.h>
-#endif
-#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
-#include <nrf_ironside/tdd.h>
 #endif
 
 LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
@@ -39,6 +35,12 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define HSFLL_NODE DT_NODELABEL(cpurad_hsfll)
 #endif
 
+#define FIXED_PARTITION_ADDRESS(label)                                                             \
+	(DT_REG_ADDR(DT_NODELABEL(label)) +                                                        \
+	 DT_REG_ADDR(COND_CODE_1(DT_FIXED_SUBPARTITION_EXISTS(DT_NODELABEL(label)),                \
+			(DT_GPARENT(DT_PARENT(DT_NODELABEL(label)))),                              \
+			(DT_GPARENT(DT_NODELABEL(label))))))
+
 #ifdef CONFIG_USE_DT_CODE_PARTITION
 #define FLASH_LOAD_OFFSET DT_REG_ADDR(DT_CHOSEN(zephyr_code_partition))
 #elif defined(CONFIG_FLASH_LOAD_OFFSET)
@@ -46,7 +48,8 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #endif
 
 #define PARTITION_IS_RUNNING_APP_PARTITION(label)                                                  \
-	(DT_REG_ADDR(DT_NODELABEL(label)) == FLASH_LOAD_OFFSET)
+	(DT_REG_ADDR(DT_NODELABEL(label)) <= FLASH_LOAD_OFFSET &&                                  \
+	 DT_REG_ADDR(DT_NODELABEL(label)) + DT_REG_SIZE(DT_NODELABEL(label)) > FLASH_LOAD_OFFSET)
 
 sys_snode_t soc_node;
 
@@ -183,20 +186,6 @@ void soc_early_init_hook(void)
 
 void soc_late_init_hook(void)
 {
-#if defined(CONFIG_SOC_NRF54H20_TDD_ENABLE)
-	int err_tdd;
-
-	err_tdd = ironside_se_tdd_configure(IRONSIDE_SE_TDD_CONFIG_ON_DEFAULT);
-	__ASSERT(err_tdd == 0, "err_tdd was %d", err_tdd);
-
-	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 3, GPIO_PIN_CNF_CTRLSEL_TND);
-	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 4, GPIO_PIN_CNF_CTRLSEL_TND);
-	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 5, GPIO_PIN_CNF_CTRLSEL_TND);
-	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 6, GPIO_PIN_CNF_CTRLSEL_TND);
-	UICR_GPIO_PIN_CNF_CTRLSEL_SET(NRF_P7, 7, GPIO_PIN_CNF_CTRLSEL_TND);
-
-#endif
-
 #if defined(CONFIG_SOC_NRF54H20_CPURAD_ENABLE)
 	int err_cpuconf;
 
@@ -209,22 +198,16 @@ void soc_late_init_hook(void)
 	void *radiocore_address = NULL;
 
 #if DT_NODE_EXISTS(DT_NODELABEL(cpurad_slot1_partition))
-	if (PARTITION_IS_RUNNING_APP_PARTITION(slot1_partition)) {
-		radiocore_address =
-			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot1_partition))) +
-				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot1_partition)) +
-				 CONFIG_ROM_START_OFFSET);
+	if (PARTITION_IS_RUNNING_APP_PARTITION(cpuapp_slot1_partition)) {
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot1_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	} else {
-		radiocore_address =
-			(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
-				 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
-				 CONFIG_ROM_START_OFFSET);
+		radiocore_address = (void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) +
+					     CONFIG_ROM_START_OFFSET);
 	}
 #else
 	radiocore_address =
-		(void *)(DT_REG_ADDR(DT_GPARENT(DT_NODELABEL(cpurad_slot0_partition))) +
-			 DT_REG_ADDR(DT_NODELABEL(cpurad_slot0_partition)) +
-			 CONFIG_ROM_START_OFFSET);
+		(void *)(FIXED_PARTITION_ADDRESS(cpurad_slot0_partition) + CONFIG_ROM_START_OFFSET);
 #endif
 
 	if (IS_ENABLED(CONFIG_SOC_NRF54H20_CPURAD_ENABLE_CHECK_VTOR) &&

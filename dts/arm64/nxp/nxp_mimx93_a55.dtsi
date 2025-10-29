@@ -1,5 +1,5 @@
 /*
- * Copyright 2022,2024 NXP
+ * Copyright 2022, 2024-2025 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -80,6 +80,87 @@
 		compatible = "nxp,imx-ccm-rev2";
 		reg = <0x44450000 DT_SIZE_K(64)>;
 		#clock-cells = <3>;
+
+		ext_clk: ext24m {
+			/* WDOG ext clock: 24MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <24000000>;
+			#clock-cells = <0>;
+		};
+
+		lpo_clk: lpo32k {
+			/* WDOG LPO clock: 32KHz */
+			compatible = "fixed-clock";
+			clock-frequency = <32000>;
+			#clock-cells = <0>;
+		};
+
+		int_clk: int133m {
+			/* WDOG int clock: 133MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <133000000>;
+			#clock-cells = <0>;
+		};
+
+		ipg_clk: ipg133m {
+			/* WDOG ipg clock: 133MHz */
+			compatible = "fixed-clock";
+			clock-frequency = <133000000>;
+			#clock-cells = <0>;
+		};
+	};
+
+	media_blk_ctrl: mediamix@4ac10000 {
+		compatible = "nxp,imx93-mediamix";
+		reg = <0x4ac10000 0x1000>;
+		status = "disabled";
+	};
+
+	wdog3: watchdog@42490000 {
+		compatible = "nxp,wdog32";
+		reg = <0x42490000 0x1000>;
+		interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		clocks = <&lpo_clk>;
+		clk-source = <1>;
+		clk-divider = <256>;
+		status = "disabled";
+	};
+
+	wdog4: watchdog@424a0000 {
+		compatible = "nxp,wdog32";
+		reg = <0x424a0000 0x1000>;
+		interrupts = <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		/* clk-source and clocks must aligned: 0-ipg_clk, 1-lpo_clk, 2-int_clk, 3-ext_clk */
+		clocks = <&lpo_clk>;
+		clk-source = <1>;
+		clk-divider = <256>;
+		status = "disabled";
+	};
+
+	lcdif: display-controller@4ae30000 {
+		compatible = "nxp,imx-lcdifv3";
+		reg = <0x4ae30000 0x10000>;
+		interrupts = <GIC_SPI 176 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
+			 <&ccm IMX_CCM_MEDIA_APB_CLK 0 0>;
+		status = "disabled";
+	};
+
+	mipi_dsi: dsi@4ae10000 {
+		compatible = "nxp,mipi-dsi-dwc";
+		reg = <0x4ae10000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		interrupts = <GIC_SPI 177 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+		clocks = <&ccm IMX_CCM_MIPI_PHY_CFG_CLK 0 0>;
+		nxp,dc = <&lcdif>;
+		status = "disabled";
 	};
 
 	gpio1: gpio@47400000 {

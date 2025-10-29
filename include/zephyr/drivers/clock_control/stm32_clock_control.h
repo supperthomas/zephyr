@@ -12,6 +12,9 @@
 
 #include <zephyr/drivers/clock_control.h>
 
+/* Retrieve the main system clock from DTS. */
+#define STM32_HCLK_FREQUENCY DT_PROP(DT_NODELABEL(rcc), clock_frequency)
+
 #if defined(CONFIG_SOC_SERIES_STM32C0X)
 #include <zephyr/dt-bindings/clock/stm32c0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
@@ -38,9 +41,10 @@
 #include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
 #include <zephyr/dt-bindings/clock/stm32l1_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32L5X)
+#elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32L5X)
+#include <zephyr/dt-bindings/clock/stm32l5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP2X)
 #include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -102,10 +106,6 @@
 #else
 #define STM32_FLASH_PRESCALER	STM32_CORE_PRESCALER
 #endif
-
-#define STM32_ADC_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc_prescaler)
-#define STM32_ADC12_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc12_prescaler)
-#define STM32_ADC34_PRESCALER	DT_PROP(DT_NODELABEL(rcc), adc34_prescaler)
 
 #define STM32_TIMER_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timpre)
 
@@ -171,6 +171,11 @@
 
 #define STM32_TIMG_PRESCALER	DT_PROP(DT_NODELABEL(rcc), timg_prescaler)
 #endif /* rcc node compatible st_stm32n6_rcc and okay */
+
+/** clock 48MHz node related symbols */
+#if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk48), st_stm32_clock_mux, okay)
+#define STM32_CK48_ENABLED	1
+#endif
 
 /** PLL node related symbols */
 
@@ -565,6 +570,10 @@
 #define STM32_MSI_PLL_MODE	DT_PROP(DT_NODELABEL(clk_msi), msi_pll_mode)
 #endif
 
+#if defined(CONFIG_SOC_SERIES_STM32L4X) && STM32_MSI_PLL_MODE && !STM32_LSE_ENABLED
+#error "On STM32L4 series, MSI PLL mode requires LSE to be enabled"
+#endif
+
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u5_msi_clock, okay) || \
 	DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(clk_msis), st_stm32u3_msi_clock, okay)
 #define STM32_MSIS_ENABLED	1
@@ -848,7 +857,7 @@ struct stm32_pclken {
  * @param clock Clock bit field value.
  */
 #define STM32_DT_CLKSEL_MASK_GET(clock) \
-	(((clock) >> STM32_DT_CLKSEL_MASK_SHIFT) & STM32_DT_CLKSEL_MASK_MASK)
+	BIT_MASK((((clock) >> STM32_DT_CLKSEL_WIDTH_SHIFT) & STM32_DT_CLKSEL_WIDTH_MASK) + 1)
 
 /**
  * @brief Obtain value field from clock source selection configuration.

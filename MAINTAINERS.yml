@@ -337,6 +337,7 @@ Arduino Platforms:
     - boards/arduino/
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
+    - dts/vendor/arduino/
 
 Base OS:
   status: maintained
@@ -457,6 +458,7 @@ Bluetooth Classic:
     - MarkWangChinese
     - gzh-terry
     - makeshi
+    - chengkai15
   files:
     - doc/connectivity/bluetooth/shell/classic/a2dp.rst
     - subsys/bluetooth/common/
@@ -760,6 +762,8 @@ Build system:
     - scripts/schemas/soc-schema.yaml
     - scripts/list_shields.py
     - scripts/snippets.py
+  files-exclude:
+    - doc/build/dts/
   labels:
     - "area: Build System"
   tests:
@@ -846,6 +850,18 @@ CMSIS-NN integration:
     - "area: CMSIS-NN"
   tests:
     - libraries.cmsis_nn
+
+CPU Frequency Scaling:
+  status: maintained
+  maintainers:
+    - peter-mitsis
+    - seankyer
+  files:
+    - include/zephyr/cpu_freq/
+    - subsys/cpu_freq/
+    - dts/bindings/p_state/
+  labels:
+    - "area: CPU Frequency Scaling"
 
 CRC:
   status: maintained
@@ -1221,6 +1237,7 @@ Documentation Infrastructure:
     - lyakh
     - lgirdwood
     - kv2019i
+    - TomasBarakNXP
   files:
     - drivers/audio/
     - include/zephyr/audio/
@@ -1259,6 +1276,7 @@ Documentation Infrastructure:
     - martinjaeger
     - str4t0m
   files:
+    - boards/shields/canis_canpico/
     - boards/shields/mcp2515/
     - boards/shields/tcan4550evm/
     - doc/connectivity/canbus/
@@ -1786,6 +1804,8 @@ Documentation Infrastructure:
   status: maintained
   maintainers:
     - anangl
+  collaborators:
+    - TomasBarakNXP
   files:
     - doc/hardware/peripherals/audio/i2s.rst
     - drivers/i2s/
@@ -2892,6 +2912,19 @@ Input:
     - drivers.input
     - input
 
+Instrumentation Subsystem:
+  status: maintained
+  maintainers:
+    - fkokosinski
+    - tgorochowik
+  files:
+    - include/zephyr/instrumentation/
+    - samples/subsys/instrumentation/
+    - scripts/instrumentation/
+    - subsys/instrumentation/
+  labels:
+    - "area: Instrumentation"
+
 Intel Platforms (Agilex):
   status: maintained
   maintainers:
@@ -3016,9 +3049,10 @@ JSON Web Token:
     - libraries.encoding.jwt
 
 Kconfig:
-  status: odd fixes
-  collaborators:
+  status: maintained
+  maintainers:
     - tejlmand
+  collaborators:
     - nashif
   files:
     - scripts/kconfig/
@@ -3322,6 +3356,7 @@ Microchip SAM Platforms:
   maintainers:
     - nandojve
   collaborators:
+    - ArunMCHP
     - pdgendt
     - stephanosio
   files:
@@ -3355,8 +3390,6 @@ Modem:
   status: maintained
   maintainers:
     - bjarki-andreasen
-  collaborators:
-    - tomi-font
   files:
     - subsys/modem/
     - include/zephyr/modem/
@@ -3383,6 +3416,24 @@ NEORV32 platform:
     - "platform: NEORV32"
   tests:
     - boards.neorv32
+
+NVMEM:
+  status: maintained
+  maintainers:
+    - pdgendt
+  collaborators:
+    - henrikbrixandersen
+  files:
+    - doc/services/nvmem/
+    - dts/bindings/nvmem/
+    - include/zephyr/devicetree/nvmem.h
+    - include/zephyr/nvmem.h
+    - subsys/nvmem/
+    - tests/subsys/nvmem/
+  labels:
+    - "area: NVMEM"
+  tests:
+    - nvmem
 
 NXP Platform Drivers:
   status: maintained
@@ -3572,6 +3623,7 @@ NXP Platforms (Xtensa):
     - dbaluta
   collaborators:
     - iuliana-prodan
+    - TomasBarakNXP
   files:
     - soc/nxp/imx/*/adsp/
     - soc/nxp/imxrt/*/f1/
@@ -3587,6 +3639,8 @@ Native_sim and POSIX arch:
   status: maintained
   maintainers:
     - aescolar
+  collaborators:
+    - tpambor
   files:
     - arch/posix/
     - boards/native/common/
@@ -4063,7 +4117,8 @@ PMCI:
     - kehintel
   files:
     - subsys/pmci/
-    - samples/modules/pmci/
+    - samples/subsys/pmci/
+    - include/zephyr/pmci/
   labels:
     - "area: PMCI"
 
@@ -4253,6 +4308,11 @@ Realtek EC Platforms:
   status: maintained
   maintainers:
     - JasonLin-RealTek
+  collaborators:
+    - elmo9999
+    - benson0715
+    - JhanBoChao-Realtek
+    - Titan-Realtek
   files:
     - boards/realtek/
     - drivers/*/*rts5912*
@@ -4325,6 +4385,25 @@ Renesas RA Platforms:
     Renesas RA SOCs, dts files, and related drivers. Boards based
     on Renesas RA SoCs.
 
+Renesas RX Platform:
+  status: maintained
+  maintainers:
+    - duynguyenxa
+  collaborators:
+    - quytranpzz
+  files:
+    - boards/renesas/*rx*/
+    - drivers/*/*renesas_rx*
+    - drivers/pinctrl/renesas/rx/
+    - dts/rx/renesas/
+    - dts/bindings/*/*renesas,rx*
+    - soc/renesas/rx/
+  labels:
+    - "platform: Renesas RX"
+  description: >-
+    Renesas RX SOCs, dts files, and related drivers. Renesas boards based
+    on RX SoCs.
+
 Renesas RZ Platforms:
   status: maintained
   maintainers:
@@ -4332,6 +4411,7 @@ Renesas RZ Platforms:
     - binhnguyen2434
   collaborators:
     - nhutnguyenkc
+    - tiennguyenzg
   files:
     - boards/renesas/rz*/
     - drivers/*/*rzt2m*
@@ -4602,6 +4682,7 @@ SiFli SF32LB Platforms:
     - gmarull
   collaborators:
     - cameled
+    - ck-telecom
   files:
     - boards/sifli/
     - drivers/*/*sf32lb*
@@ -4809,10 +4890,13 @@ TI SimpleLink Platforms:
   status: maintained
   maintainers:
     - vaishnavachath
+  collaborators:
+    - bogdanovs
   files:
     - boards/ti/cc*/
     - boards/ti/msp*/
     - drivers/*/*cc13*
+    - drivers/*/*cc23*
     - drivers/*/*cc25*
     - drivers/*/*cc26*
     - drivers/*/*cc32*
@@ -5485,6 +5569,7 @@ West:
     - AzharMCHP
     - scottwcpg
     - nandojve
+    - NhMchp
   collaborators:
     - VenkatKotakonda
     - albertofloyd
@@ -5576,6 +5661,8 @@ West:
     - soburi
     - duynguyenxa
     - thaoluonguw
+    - binhnguyen2434
+    - nhutnguyenkc
   files: []
   labels:
     - "platform: Renesas"
@@ -5738,6 +5825,7 @@ West:
   collaborators:
     - nashif
     - inteljiangwe1
+    - dkalowsk
   files: []
   labels:
     - "area: MCTP"
@@ -5864,7 +5952,7 @@ West:
     - "area: Serialization"
 
 "West project: net-tools":
-  status: odd fixes
+  status: maintained
   maintainers:
     - jukkar
   collaborators:
@@ -6022,10 +6110,7 @@ West:
     - thrift
 
 "West project: trusted-firmware-a":
-  status: maintained
-  maintainers:
-    - povergoing
-    - sgrrzhf
+  status: odd fixes
   collaborators:
     - wearyzen
     - ithinuel

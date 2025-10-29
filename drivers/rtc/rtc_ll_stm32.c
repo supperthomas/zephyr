@@ -21,6 +21,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
 #include <soc.h>
+#include <stm32_bitops.h>
 #include <stm32_ll_cortex.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_rcc.h>
@@ -475,7 +476,7 @@ static int rtc_stm32_init(const struct device *dev)
 	 * as time base, but SysTick is initialized after the RTC...
 	 */
 	const uint32_t cycles_to_waste =
-		84 * (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / USEC_PER_SEC);
+		84 * (STM32_HCLK_FREQUENCY / USEC_PER_SEC);
 	volatile uint32_t i = cycles_to_waste;
 
 	while (--i > 0) {
@@ -1054,7 +1055,7 @@ static int rtc_stm32_set_calibration(const struct device *dev, int32_t calibrati
 
 	LL_RTC_DisableWriteProtection(RTC);
 
-	MODIFY_REG(RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
+	stm32_reg_modify_bits(&RTC->CALR, RTC_CALR_CALP | RTC_CALR_CALM, calp | calm);
 
 	LL_RTC_EnableWriteProtection(RTC);
 
@@ -1067,10 +1068,10 @@ static int rtc_stm32_get_calibration(const struct device *dev, int32_t *calibrat
 {
 	ARG_UNUSED(dev);
 
-	uint32_t calr = sys_read32((mem_addr_t) &RTC->CALR);
+	uint32_t calr = stm32_reg_read(&RTC->CALR);
 
-	bool calp_enabled = READ_BIT(calr, RTC_CALR_CALP);
-	uint32_t calm = READ_BIT(calr, RTC_CALR_CALM);
+	bool calp_enabled = stm32_reg_read_bits(&calr, RTC_CALR_CALP) == RTC_CALR_CALP;
+	uint32_t calm = stm32_reg_read_bits(&calr, RTC_CALR_CALM);
 
 	int32_t nb_pulses = -((int32_t) calm);
 

@@ -103,6 +103,27 @@ typedef int (*_poller_cb_t)(struct k_poll_event *event, uint32_t state);
  * @{
  */
 
+/**
+ * @brief Resets thread longest frame usage data for specified thread
+ *
+ * This routine resets the longest frame value statistic
+ * after printing to zero, enabling observation of the
+ * longest frame from the most recent interval rather than
+ * the longest frame since startup.
+ *
+ * @param thread Pointer to the thread to reset counter.
+ *
+ * @note @kconfig{CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL} must
+ * be set for this function to be effective.
+ */
+static inline void
+	k_thread_runtime_stats_longest_frame_reset(__maybe_unused struct k_thread *thread)
+{
+#ifdef CONFIG_SCHED_THREAD_USAGE_ANALYSIS
+	thread->base.usage.longest = 0ULL;
+#endif
+}
+
 typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
 				   void *user_data);
 
@@ -667,6 +688,33 @@ __attribute_const__
 __syscall k_tid_t k_sched_current_thread_query(void);
 
 /**
+ * @brief Test whether startup is in the before-main-task phase.
+ *
+ * This routine allows the caller to customize its actions, depending on
+ * whether it being invoked before the kernel is fully active.
+ *
+ * @funcprops \isr_ok
+ *
+ * @return true if invoked before post-kernel initialization
+ * @return false if invoked during/after post-kernel initialization
+ */
+static inline bool k_is_pre_kernel(void)
+{
+	extern bool z_sys_post_kernel; /* in init.c */
+
+	/*
+	 * If called from userspace, it must be post kernel.
+	 * This guard is necessary because z_sys_post_kernel memory
+	 * is not accessible to user threads.
+	 */
+	if (k_is_user_context()) {
+		return false;
+	}
+
+	return !z_sys_post_kernel;
+}
+
+/**
  * @brief Get thread ID of the current thread.
  *
  * @return ID of current thread.
@@ -675,6 +723,8 @@ __syscall k_tid_t k_sched_current_thread_query(void);
 __attribute_const__
 static inline k_tid_t k_current_get(void)
 {
+	__ASSERT(!k_is_pre_kernel(), "k_current_get called pre-kernel");
+
 #ifdef CONFIG_CURRENT_THREAD_USE_TLS
 
 	/* Thread-local cache of current thread ID, set in z_thread_entry() */
@@ -1252,24 +1302,6 @@ bool k_is_in_isr(void);
  * @return Non-zero if invoked by a preemptible thread.
  */
 __syscall int k_is_preempt_thread(void);
-
-/**
- * @brief Test whether startup is in the before-main-task phase.
- *
- * This routine allows the caller to customize its actions, depending on
- * whether it being invoked before the kernel is fully active.
- *
- * @funcprops \isr_ok
- *
- * @return true if invoked before post-kernel initialization
- * @return false if invoked during/after post-kernel initialization
- */
-static inline bool k_is_pre_kernel(void)
-{
-	extern bool z_sys_post_kernel; /* in init.c */
-
-	return !z_sys_post_kernel;
-}
 
 /**
  * @}
@@ -5663,6 +5695,8 @@ int k_mem_slab_alloc(struct k_mem_slab *slab, void **mem,
  * This routine releases a previously allocated memory block back to its
  * associated memory slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  * @param mem Pointer to the memory block (as returned by k_mem_slab_alloc()).
  */
@@ -5673,6 +5707,8 @@ void k_mem_slab_free(struct k_mem_slab *slab, void *mem);
  *
  * This routine gets the number of memory blocks that are currently
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5688,6 +5724,8 @@ static inline uint32_t k_mem_slab_num_used_get(struct k_mem_slab *slab)
  *
  * This routine gets the maximum number of memory blocks that were
  * allocated in @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab.
  *
@@ -5709,6 +5747,8 @@ static inline uint32_t k_mem_slab_max_used_get(struct k_mem_slab *slab)
  * This routine gets the number of memory blocks that are currently
  * unallocated in @a slab.
  *
+ * @funcprops \isr_ok
+ *
  * @param slab Address of the memory slab.
  *
  * @return Number of unallocated memory blocks.
@@ -5722,6 +5762,8 @@ static inline uint32_t k_mem_slab_num_free_get(struct k_mem_slab *slab)
  * @brief Get the memory stats for a memory slab
  *
  * This routine gets the runtime memory usage stats for the slab @a slab.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  * @param stats Pointer to memory into which to copy memory usage statistics
@@ -5737,6 +5779,8 @@ int k_mem_slab_runtime_stats_get(struct k_mem_slab *slab, struct sys_memory_stat
  *
  * This routine resets the maximum memory usage for the slab @a slab to its
  * current usage.
+ *
+ * @funcprops \isr_ok
  *
  * @param slab Address of the memory slab
  *

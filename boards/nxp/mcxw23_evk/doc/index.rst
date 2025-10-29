@@ -79,6 +79,16 @@ The MCXW23 SoC has 3 FLEXCOMM interfaces for serial
 communication. One is configured as USART for the console, one is
 configured for I2C, and the other one is not used.
 
+Fetch Binary Blobs
+******************
+
+To support Bluetooth, mcxw23_evk requires fetching controller lib blobs, which can be
+achieved by running the following command:
+
+.. code-block:: console
+
+   west blobs fetch hal_nxp
+
 Programming and Debugging
 *************************
 
@@ -167,8 +177,7 @@ should see the following message in the terminal:
    *** Booting Zephyr OS build v4.2.0-2105-g9da1d56da9e7 ***
    Hello World! mcxw23_evk/mcxw236
 
-.. include:: ../../common/board-footer.rst
-   :start-after: nxp-board-footer
+.. include:: ../../common/board-footer.rst.inc
 
 .. _MCXW23 SoC Website:
    https://www.nxp.com/products/MCX-W23

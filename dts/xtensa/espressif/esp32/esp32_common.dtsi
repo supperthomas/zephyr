@@ -192,7 +192,7 @@
 			clocks = <&clock ESP32_MODULE_MAX>;
 			interrupts = <RTC_CORE_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
-			status = "okay";
+			status = "disabled";
 		};
 
 		flash: flash-controller@3ff42000 {
@@ -516,6 +516,7 @@
 			compatible = "espressif,esp32-adc";
 			reg = <0x3ff48800 10>;
 			clocks = <&clock ESP32_SARADC_MODULE>;
+			interrupt-parent = <&intc>;
 			unit = <1>;
 			channel-count = <8>;
 			#io-channel-cells = <1>;
@@ -552,6 +553,20 @@
 				reg = <1>;
 				status = "disabled";
 			};
+		};
+
+		sha: sha@3ff03000 {
+			compatible = "espressif,esp32-sha";
+			reg = <0x3ff03000 0x100>;
+			clocks = <&clock ESP32_SHA_MODULE>;
+			status = "okay";
+		};
+
+		aes: aes@3ff01000 {
+			compatible = "espressif,esp32-aes";
+			reg = <0x3ff01000 0x1000>;
+			clocks = <&clock ESP32_AES_MODULE>;
+			status = "okay";
 		};
 	};
 };

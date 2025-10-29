@@ -1,7 +1,7 @@
 #
-#Copyright 2022-2025 NXP
-#Copyright(c)2025 u-blox AG
-#SPDX-License-Identifier:Apache-2.0
+# Copyright 2022-2025 NXP
+# Copyright (c) 2025 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
 #
 
 if(CONFIG_NXP_RW6XX_BOOT_HEADER)
@@ -23,7 +23,7 @@ if(CONFIG_NXP_RW6XX_BOOT_HEADER)
 	endif()
 
 	# Set TX power limit
-	if (CONFIG_WIFI_NXP)
+	if(CONFIG_WIFI_NXP)
 		zephyr_include_directories(
 			tx_pwr_limits
 		)

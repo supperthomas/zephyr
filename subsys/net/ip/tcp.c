@@ -726,7 +726,7 @@ static int set_tcp_keep_cnt(struct tcp *conn, const void *value, size_t len)
 	return 0;
 }
 
-static int get_tcp_keep_alive(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_alive(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -738,7 +738,7 @@ static int get_tcp_keep_alive(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_idle(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_idle(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -750,7 +750,7 @@ static int get_tcp_keep_idle(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_intvl(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_intvl(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -762,7 +762,7 @@ static int get_tcp_keep_intvl(struct tcp *conn, void *value, size_t *len)
 	return 0;
 }
 
-static int get_tcp_keep_cnt(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_keep_cnt(struct tcp *conn, void *value, uint32_t *len)
 {
 	if (conn == NULL || value == NULL || len == NULL ||
 	    *len != sizeof(int)) {
@@ -1394,7 +1394,7 @@ static int ip_header_add(struct tcp *conn, struct net_pkt *pkt)
 	return -EINVAL;
 }
 
-static int set_tcp_nodelay(struct tcp *conn, const void *value, size_t len)
+static int set_tcp_nodelay(struct tcp *conn, const void *value, uint32_t len)
 {
 	int no_delay_int;
 
@@ -1413,7 +1413,7 @@ static int set_tcp_nodelay(struct tcp *conn, const void *value, size_t len)
 	return 0;
 }
 
-static int get_tcp_nodelay(struct tcp *conn, void *value, size_t *len)
+static int get_tcp_nodelay(struct tcp *conn, void *value, uint32_t *len)
 {
 	int no_delay_int = (int)conn->tcp_nodelay;
 
@@ -3137,7 +3137,7 @@ static enum net_verdict tcp_in(struct tcp *conn, struct net_pkt *pkt)
 				 * the TCP context and put the connection into
 				 * active close (TCP_FIN_WAIT_1).
 				 */
-				net_tcp_put(conn->context);
+				net_tcp_put(conn->context, false);
 				break;
 			}
 
@@ -3690,7 +3690,7 @@ out:
 }
 
 /* Active connection close: send FIN and go to FIN_WAIT_1 state */
-int net_tcp_put(struct net_context *context)
+int net_tcp_put(struct net_context *context, bool force_close)
 {
 	struct tcp *conn = context->tcp;
 
@@ -3713,26 +3713,43 @@ int net_tcp_put(struct net_context *context)
 				conn->send_data_total);
 			conn->in_close = true;
 
-			/* How long to wait until all the data has been sent?
-			 */
-			k_work_reschedule_for_queue(&tcp_work_q,
-						    &conn->send_data_timer,
-						    K_MSEC(TCP_RTO_MS));
+			if (force_close) {
+				k_work_cancel_delayable(&conn->send_data_timer);
+
+				keep_alive_timer_stop(conn);
+				tcp_conn_close(conn, -ENETRESET);
+			} else {
+				/* How long to wait until all the data has been sent?
+				 */
+				k_work_reschedule_for_queue(&tcp_work_q,
+							    &conn->send_data_timer,
+							    K_MSEC(TCP_RTO_MS));
+			}
+
 		} else {
-			NET_DBG("[%p] TCP connection in %s close, "
-				"not disposing yet (waiting %dms)",
-				conn, "active", tcp_max_timeout_ms);
-			k_work_reschedule_for_queue(&tcp_work_q,
-						    &conn->fin_timer,
-						    FIN_TIMEOUT);
+			if (force_close) {
+				NET_DBG("[%p] TCP connection in %s close, "
+					"disposing immediately",
+					conn, "forced");
 
-			tcp_out(conn, FIN | ACK);
-			conn_seq(conn, + 1);
-			tcp_setup_retransmission(conn);
+				keep_alive_timer_stop(conn);
+				tcp_conn_close(conn, -ENETRESET);
+			} else {
+				NET_DBG("[%p] TCP connection in %s close, "
+					"not disposing yet (waiting %dms)",
+					conn, "active", tcp_max_timeout_ms);
+				k_work_reschedule_for_queue(&tcp_work_q,
+							    &conn->fin_timer,
+							    FIN_TIMEOUT);
 
-			conn_state(conn, TCP_FIN_WAIT_1);
+				tcp_out(conn, FIN | ACK);
+				conn_seq(conn, + 1);
+				tcp_setup_retransmission(conn);
 
-			keep_alive_timer_stop(conn);
+				conn_state(conn, TCP_FIN_WAIT_1);
+
+				keep_alive_timer_stop(conn);
+			}
 		}
 	} else if (conn->in_connect) {
 		conn->in_connect = false;
@@ -4411,7 +4428,7 @@ enum net_verdict tp_input(struct net_conn *net_conn,
 		if (is("CLOSE2", tp->op)) {
 			struct tcp *conn =
 				(void *)sys_slist_peek_head(&tcp_conns);
-			net_tcp_put(conn->context);
+			net_tcp_put(conn->context, false);
 		}
 		if (is("RECV", tp->op)) {
 #define HEXSTR_SIZE 64
@@ -4643,7 +4660,7 @@ uint16_t net_tcp_get_mtu(struct sockaddr *dst)
 
 int net_tcp_set_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       const void *value, size_t len)
+		       const void *value, uint32_t len)
 {
 	int ret = 0;
 
@@ -4680,7 +4697,7 @@ int net_tcp_set_option(struct net_context *context,
 
 int net_tcp_get_option(struct net_context *context,
 		       enum tcp_conn_option option,
-		       void *value, size_t *len)
+		       void *value, uint32_t *len)
 {
 	int ret = 0;
 
@@ -4732,6 +4749,28 @@ struct k_sem *net_tcp_conn_sem_get(struct net_context *context)
 	struct tcp *conn = context->tcp;
 
 	return &conn->connect_sem;
+}
+
+static void close_tcp_conn(struct tcp *conn, void *user_data)
+{
+	struct net_if *iface = user_data;
+	struct net_context *context = conn->context;
+
+	if (!net_context_is_used(context)) {
+		return;
+	}
+
+	if (net_context_get_iface(context) != iface) {
+		return;
+	}
+
+	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
+	net_tcp_put(context, true);
+}
+
+void net_tcp_close_all_for_iface(struct net_if *iface)
+{
+	net_tcp_foreach(close_tcp_conn, iface);
 }
 
 void net_tcp_init(void)

@@ -23,6 +23,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/toolchain.h>
 
 #include "bap_endpoint.h"
 #include "cap_internal.h"
@@ -146,7 +147,7 @@ void bt_cap_handover_broadcast_source_stopped(uint8_t reason)
 	if (proc_param->is_unicast_to_broadcast) {
 		LOG_DBG("Unexpected broadcast source stop with reason 0x%02x", reason);
 
-		const int err = bt_cap_initiator_broadcast_audio_delete(
+		__maybe_unused const int err = bt_cap_initiator_broadcast_audio_delete(
 			proc_param->unicast_to_broadcast.broadcast_source);
 
 		__ASSERT_NO_MSG(err == 0);
@@ -260,8 +261,6 @@ void bt_cap_handover_unicast_to_broadcast_reception_start(void)
 	err = cap_commander_broadcast_reception_start(&param);
 	if (err != 0) {
 		LOG_DBG("Failed to start reception start: %d", err);
-		active_proc->err = err;
-		active_proc->failed_conn = NULL;
 
 		bt_cap_handover_complete();
 	}
