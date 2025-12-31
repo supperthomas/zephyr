@@ -170,7 +170,6 @@ static int app_query_video_info(const struct device *const video_dev,
 			VIDEO_FOURCC_TO_STR(fcap->pixelformat),
 			fcap->width_min, fcap->width_max, fcap->width_step,
 			fcap->height_min, fcap->height_max, fcap->height_step);
-		i++;
 	}
 
 	/* Get default/native format */
@@ -303,9 +302,8 @@ static int app_setup_video_buffers(const struct device *const video_dev,
 	int ret;
 
 	/* Alloc video buffers and enqueue for capture */
-	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX ||
-	    fmt->size > CONFIG_VIDEO_BUFFER_POOL_SZ_MAX) {
-		LOG_ERR("Not enough buffers or memory to start streaming");
+	if (caps->min_vbuf_count > CONFIG_VIDEO_BUFFER_POOL_NUM_MAX) {
+		LOG_ERR("Not enough buffers to start streaming");
 		return -EINVAL;
 	}
 

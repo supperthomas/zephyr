@@ -140,12 +140,30 @@ static int entropy_stm32_suspend(void)
 	LL_RNG_SetAesReset(rng, 1);
 #endif /* CONFIG_SOC_STM32WB09XX */
 
-#ifdef CONFIG_SOC_SERIES_STM32WBAX
-	uint32_t wait_cycles, rng_rate;
+/*
+ * The PKA IP is currently not supported by Zephyr but may be used by
+ * external code, such as wireless stack for example. Since the RNG
+ * clock must be enabled when PKA is used on certain series, check if
+ * the PKA is in use and keep RNG clock active if so.
+ *
+ * A notable exception is the STM32WB0 series where PKA can operate
+ * autonomously and, on certain SoCs, lacks PKA_CR.EN and corresponding
+ * LL_PKA_IsEnabled(). Since RNG clock is not required by PKA, we can
+ * ignore the check on this series.
+ */
+#if defined(PKA) && !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	if (__HAL_RCC_PKA_IS_CLK_ENABLED() && LL_PKA_IsEnabled(PKA)) {
+#if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
+		z_stm32_hsem_unlock(CFG_HW_RNG_SEMID);
+#endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
-	if (LL_PKA_IsEnabled(PKA)) {
+		/* PKA needs RNG clock, so exit here if in use */
 		return 0;
 	}
+#endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
+
+#ifdef CONFIG_SOC_SERIES_STM32WBAX
+	uint32_t wait_cycles, rng_rate;
 
 	if (clock_control_get_rate(dev_data->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
@@ -328,9 +346,14 @@ static int recover_seed_error(RNG_TypeDef *rng)
 {
 	ll_rng_clear_seis(rng);
 
+#if !defined(CONFIG_SOC_SERIES_STM32WB0X)
+	/* After a noise source error is detected, 12 words must be read from the RNG_DR register
+	 * and discarded to restart the entropy generation.
+	 */
 	for (int i = 0; i < 12; ++i) {
 		(void)ll_rng_read_rand_data(rng);
 	}
+#endif /* !CONFIG_SOC_SERIES_STM32WB0X */
 
 	if (ll_rng_is_active_seis(rng) != 0) {
 		return -EIO;
@@ -446,7 +469,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 		ret = random_sample_get(&rnd_sample);
 #if !IRQLESS_TRNG
 		NVIC_ClearPendingIRQ(IRQN);
-#endif /* IRQLESS_TRNG */
+#endif /* !IRQLESS_TRNG */
 
 		if (ret < 0) {
 			continue;

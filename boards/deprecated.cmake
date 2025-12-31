@@ -70,3 +70,18 @@ set(scobc_module1_DEPRECATED
 set(raytac_an54l15q_db/nrf54l15/cpuapp_DEPRECATED
     raytac_an54lq_db_15/nrf54l15/cpuapp
 )
+set(fvp_base_revc_2xaemv8a_DEPRECATED
+    fvp_base_revc_2xaem/v8a
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp
+)
+set(fvp_base_revc_2xaemv8a/fvp_base_revc_2xaemv8a/smp/ns_DEPRECATED
+    fvp_base_revc_2xaem/v8a/smp/ns
+)
+set(esp32s3_devkitm/esp32s3/procpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/procpu
+)
+set(esp32s3_devkitm/esp32s3/appcpu_DEPRECATED
+    esp32s3_devkitc/esp32s3/appcpu
+)
